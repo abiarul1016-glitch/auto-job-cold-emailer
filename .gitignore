@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# SENSITIVE
+*.env
+playwright/
+*.mp4
+*.mp3
+*.wav
+state.json
