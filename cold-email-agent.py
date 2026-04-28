@@ -35,6 +35,8 @@ USER_EMAIL = os.getenv("USER_EMAIL")
 # NOTE: User must get app password from google (gmail), to allow it assess to the email client
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 
+IMAGE_URL = ""
+
 # Open tracker for which emails have been sent to
 try:
     with open("sent_emails.json", "r") as file:
@@ -215,12 +217,13 @@ async def send_cold_email(send_to, company_name, generated_reason):
         Returns:
             str: Success or error message.
     """
-    # For now reassign send_to, to my email for testing purposes. TODO: REMOVE IN PRODUCTION
-    send_to = USER_EMAIL
 
     # Check if email has already been sent to company, to prevent spamming from program-side
     if await check_if_already_sent(send_to):
         return "Email has already been sent to this address before."
+
+    # For now reassign send_to, to my email for testing purposes. TODO: REMOVE IN PRODUCTION
+    send_to = USER_EMAIL
 
     # Set up Email Details - TODO: Add profile image
     message = EmailMessage()
@@ -288,6 +291,7 @@ abiarul1016@gmail.com
 
             <!-- EMAIL SIGNATURE -->
             <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <img src="{IMAGE_URL}" width="60" style="border-radius: 50%; display: block; margin-bottom: 5px;">
                 <strong style="color: #007bff;">Abishan Arulselvan</strong><br>
                 <span style="font-size: 12px; color: #666;">Python & Automation Developer | Student</span><br>
                 <a href="https://github.com/abiarul1016-glitch" style="font-size: 12px;">GitHub</a> | 

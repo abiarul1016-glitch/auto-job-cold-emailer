@@ -223,4 +223,4 @@ playwright/
 *.mp4
 *.mp3
 *.wav
-state.json
+*.json
