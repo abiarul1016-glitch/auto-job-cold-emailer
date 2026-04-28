@@ -129,7 +129,7 @@ class WebAgent:
         self.messages = [
             {
                 "role": "system",
-                "content": "You are a web agent. You have access to functions which allows you to access the browser and navigate pages. Also, you are in an agent loop, so you are free to use whatever function you wish, and as many you like. Try to pass arguments into the url (when applicable), rather than clicking, to preserve resources and increase efficiencies by decreasing overhead.",
+                "content": "You are a job application assistant. You have access to functions which allows you to access the browser, navigate pages, as well as send emails. Also, you are in an agent loop, so you are free to use whatever function you wish, and as many you like. Try to pass arguments into the url (when applicable), rather than clicking, to preserve resources and increase efficiencies by decreasing overhead.",
             },
         ]
         self.client = AsyncClient()
@@ -194,18 +194,17 @@ class WebAgent:
 
 
 # this can be factored into two functions: generate email, and send email
-async def send_cold_email(
-    send_to,
-    company_name,
-    generated_reason,
-    send_from=USER_EMAIL,
-):
+async def send_cold_email(send_to, company_name, generated_reason):
     """
-    Function which allows sending emails
+    Send a personalized cold email to a company.
 
-    takes in argument of the company's email, to whom the email should be sent to, the relevant company's name, as well as a generated personalized reason for why you are applying to the company
+        Args:
+            send_to: Recipient email address (str).
+            company_name: Name of the company (str). Used to personalize subject and body.
+            generated_reason: Personalized reason for applying (str). Injected into email body.
 
-    returns a confirmation if the email was sent
+        Returns:
+            str: Success or error message.
     """
 
     # For now reassign send_to, to my email for testing purposes. TODO: REMOVE IN PRODUCTION
@@ -213,17 +212,15 @@ async def send_cold_email(
 
     # Set up Email Details - TODO: Add profile image
     message = EmailMessage()
-    message["From"] = send_from
+    message["From"] = USER_EMAIL
     message["To"] = send_to
     message["Subject"] = (
         f"12th grader / Python & Automation dev looking to build for {company_name}"
     )
     message.set_content(
-        f"""
+        f"""To the team at {company_name},
 
-To the team at {company_name},
-
-Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I’d rather build real tools than read about them.
+Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I'd rather build real tools than read about them.
 
 I'm a self-taught developer (CS50x/P) focused on automation and local AI. Recently, I built a slim browser agent using Playwright because traditional MCP servers were too slow for my local machine. You can see the repo here: https://github.com/abiarul1016-glitch/slim-browser-agent
 
@@ -250,18 +247,59 @@ abiarul1016@gmail.com
 """
     )
 
+    # Gemini-Generated HTML version, for better formatting. NOTE: Perhaps remove uneccessary bolding
+    html_content = f"""
+    <html>
+        <body style="font-family: 'Georgia', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+            <p>To the team at <strong>{company_name}</strong>,</p>
+            
+            <p>Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I'd rather build real tools than read about them.</p>
+
+            <p>I'm a self-taught developer (CS50x/P) focused on automation and local AI. Recently, I built a slim browser agent using Playwright because traditional MCP servers were too slow for my local machine. You can see the repo here: <a href="https://github.com/abiarul1016-glitch/slim-browser-agent">https://github.com/abiarul1016-glitch/slim-browser-agent</a></p>
+            
+            <p>I also have experience with:</p>
+            <ul>
+                <li><strong>Local AI:</strong> Working with Ollama for task automation.</li>
+                <li><strong>Voice/Data:</strong> Building end-to-end automation pipelines.</li>
+                <li><strong>Skipper:</strong> An automated absence caller using cloned voices.</li>
+            </ul>
+            
+            <p>Personally, my most interesting automation: Skipper, an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: <a href="https://github.com/abiarul1016-glitch/Skipper">https://github.com/abiarul1016-glitch/Skipper</a></p>
+
+            <p>I'm looking to skip the traditional 4-year degree to put that energy into an organization building real products. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.</p>
+
+            <p>{generated_reason}</p>
+
+            <p>Do you have 10 minutes for a quick chat, or perhaps a small task/internship where I could prove my value?</p>
+
+            <!-- EMAIL SIGNATURE -->
+            <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <strong style="color: #007bff;">Abishan Arulselvan</strong><br>
+                <span style="font-size: 12px; color: #666;">Python & Automation Developer | Student</span><br>
+                <a href="https://github.com/abiarul1016-glitch" style="font-size: 12px;">GitHub</a> | 
+                <a href="https://www.linkedin.com/in/abishan-arulselvan/" style="font-size: 12px;">LinkedIn</a>
+            </div>
+        </body>
+    </html>
+    """
+    message.add_alternative(html_content, subtype="html")
+
     try:
         await aiosmtplib.send(
             message,
-            hostname="smtp.example.com",
+            hostname="smtp.gmail.com",
             port=587,
             start_tls=True,
-            username=send_from,
+            username=USER_EMAIL,
             password=APP_PASSWORD,
         )
         return f"Email successfully send to {company_name}: {send_to}"
     except Exception as e:
         return f"Email was not successfully send due to {e}"
+
+
+async def check_if_already_sent():
+    pass
 
 
 async def main():
