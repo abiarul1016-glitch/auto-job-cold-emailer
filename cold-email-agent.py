@@ -27,7 +27,7 @@ AVAILABLE_MODELS = {
 SELECTED_MODEL = AVAILABLE_MODELS.get("qwen3.6")
 
 # Change CLICK to True to activate clicking functionality
-CLICK = False
+CLICK = True
 
 # TODO: Add try and except logic
 USER_EMAIL = os.getenv("USER_EMAIL")
@@ -35,7 +35,7 @@ USER_EMAIL = os.getenv("USER_EMAIL")
 # NOTE: User must get app password from google (gmail), to allow it assess to the email client
 APP_PASSWORD = os.getenv("APP_PASSWORD")
 
-IMAGE_URL = ""
+IMAGE_URL = "https://github.com/abiarul1016-glitch/auto-job-cold-emailer/raw/f20de0b4b59431d73832af688e3771d86667491b/assets/profile.png"
 
 # Open tracker for which emails have been sent to
 try:
@@ -212,15 +212,15 @@ async def send_cold_email(send_to, company_name, generated_reason):
         Args:
             send_to: Recipient email address (str).
             company_name: Name of the company (str). Used to personalize subject and body.
-            generated_reason: Personalized reason for applying, must be relevant to the company (str). Injected into email body.
+            generated_reason: Two sweet sentences long, personalized reason for applying which must be relevant to the company (str). Injected into email body.
 
         Returns:
-            str: Success or error message.
+            str: Success, error message, or a message that an email has already been sent to that address.
     """
 
     # Check if email has already been sent to company, to prevent spamming from program-side
     if await check_if_already_sent(send_to):
-        return "Email has already been sent to this address before."
+        return "Email has already been sent to this address before. Do not reattempt, as to avoid spamming them."
 
     # For now reassign send_to, to my email for testing purposes. TODO: REMOVE IN PRODUCTION
     send_to = USER_EMAIL
@@ -291,11 +291,24 @@ abiarul1016@gmail.com
 
             <!-- EMAIL SIGNATURE -->
             <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px;">
-                <img src="{IMAGE_URL}" width="60" style="border-radius: 50%; display: block; margin-bottom: 5px;">
-                <strong style="color: #007bff;">Abishan Arulselvan</strong><br>
-                <span style="font-size: 12px; color: #666;">Python & Automation Developer | Student</span><br>
-                <a href="https://github.com/abiarul1016-glitch" style="font-size: 12px;">GitHub</a> | 
-                <a href="https://www.linkedin.com/in/abishan-arulselvan/" style="font-size: 12px;">LinkedIn</a>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr>
+                        <!-- Image Column -->
+                        <td style="vertical-align: top; padding-right: 15px;">
+                            <img src="{IMAGE_URL}" width="65" height="65" style="display: block; border: 0;">
+                        </td>
+                        
+                        <!-- Text Column -->
+                        <td style="vertical-align: top; line-height: 1.4;">
+                            <strong style="color: #007bff; font-size: 16px;">Abishan Arulselvan</strong><br>
+                            <span style="font-size: 12px; color: #666;">Python & Automation Developer | Student</span><br>
+                            <span style="font-size: 12px;">
+                                <a href="https://github.com/abiarul1016-glitch" style="text-decoration: none; color: #007bff;">GitHub</a> | 
+                                <a href="https://www.linkedin.com/in/abishan-arulselvan/" style="text-decoration: none; color: #007bff;">LinkedIn</a>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
             </div>
         </body>
     </html>
