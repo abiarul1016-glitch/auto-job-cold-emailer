@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 from datetime import datetime
 from email.message import EmailMessage
@@ -33,6 +34,14 @@ USER_EMAIL = os.getenv("USER_EMAIL")
 
 # NOTE: User must get app password from google (gmail), to allow it assess to the email client
 APP_PASSWORD = os.getenv("APP_PASSWORD")
+
+# Open tracker for which emails have been sent to
+try:
+    with open("sent_emails.json", "r") as file:
+        EMAIL_LIST = json.load(file)
+except FileNotFoundError:
+    print("Email Addresses JSON does not exist yet.")
+    EMAIL_LIST = {}
 
 
 class BrowserManager:
@@ -201,14 +210,17 @@ async def send_cold_email(send_to, company_name, generated_reason):
         Args:
             send_to: Recipient email address (str).
             company_name: Name of the company (str). Used to personalize subject and body.
-            generated_reason: Personalized reason for applying (str). Injected into email body.
+            generated_reason: Personalized reason for applying, must be relevant to the company (str). Injected into email body.
 
         Returns:
             str: Success or error message.
     """
-
     # For now reassign send_to, to my email for testing purposes. TODO: REMOVE IN PRODUCTION
     send_to = USER_EMAIL
+
+    # Check if email has already been sent to company, to prevent spamming from program-side
+    if await check_if_already_sent(send_to):
+        return "Email has already been sent to this address before."
 
     # Set up Email Details - TODO: Add profile image
     message = EmailMessage()
@@ -227,7 +239,8 @@ I'm a self-taught developer (CS50x/P) focused on automation and local AI. Recent
 I also have experience with:
 Local AI: Working with Ollama for task automation.
 Voice/Data: Building end-to-end automation pipelines (scraping, data analysis).
-Personally, my most interesting automation: Skipper, an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: https://github.com/abiarul1016-glitch/Skipper
+
+Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: https://github.com/abiarul1016-glitch/Skipper
 
 I'm looking to skip the traditional 4-year degree to put that energy into an organization building real products. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.
 
@@ -247,7 +260,7 @@ abiarul1016@gmail.com
 """
     )
 
-    # Gemini-Generated HTML version, for better formatting. NOTE: Perhaps remove uneccessary bolding
+    # HTML version, for better formatting
     html_content = f"""
     <html>
         <body style="font-family: 'Georgia', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
@@ -261,10 +274,11 @@ abiarul1016@gmail.com
             <ul>
                 <li><strong>Local AI:</strong> Working with Ollama for task automation.</li>
                 <li><strong>Voice/Data:</strong> Building end-to-end automation pipelines.</li>
-                <li><strong>Skipper:</strong> An automated absence caller using cloned voices.</li>
+                <li><strong>Web Scraping:</strong> Created a Hackathon Scraper so I don't miss out on free food! <a href="https://github.com/abiarul1016-glitch/hackathon_scraper">GitHub</a></li>
+                <li><strong>rental suite:</strong> An automated listing poster, using Playwright, Python asyncio, and text-generation via Ollama <a href="https://github.com/abiarul1016-glitch/rental-suite">GitHub</a></li>
             </ul>
             
-            <p>Personally, my most interesting automation: Skipper, an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: <a href="https://github.com/abiarul1016-glitch/Skipper">https://github.com/abiarul1016-glitch/Skipper</a></p>
+            <p>Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: <a href="https://github.com/abiarul1016-glitch/Skipper">https://github.com/abiarul1016-glitch/Skipper</a></p>
 
             <p>I'm looking to skip the traditional 4-year degree to put that energy into an organization building real products. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.</p>
 
@@ -293,17 +307,32 @@ abiarul1016@gmail.com
             username=USER_EMAIL,
             password=APP_PASSWORD,
         )
+
+        await add_email_to_list(company_name, send_to)
+
         return f"Email successfully send to {company_name}: {send_to}"
     except Exception as e:
         return f"Email was not successfully send due to {e}"
 
 
-async def check_if_already_sent():
-    pass
+async def check_if_already_sent(email):
+    return email in EMAIL_LIST.values()
+
+
+async def add_email_to_list(company_name: str, email: str):
+    EMAIL_LIST[company_name] = email
 
 
 async def main():
-    print("This is a slim browser agent!")
+    print("\nThis is a slim browser agent!")
+
+    # # Open tracker for which emails have been sent to
+    # try:
+    #     async with aiofiles.open("sent_emails.json", "r") as file:
+    #         EMAIL_LIST = json.load(file)
+    # except FileNotFoundError:
+    #     print('Email Addresses JSON does not exist yet.')
+    #     EMAIL_LIST = {}
 
     browser = await BrowserManager.create(state_path=BROWSER_STATE_PATH)
     # Change click to True to activate clicking functionality
@@ -312,6 +341,9 @@ async def main():
     try:
         await agent.run()
     finally:
+        with open("sent_emails.json", "w") as file:
+            json.dump(EMAIL_LIST, file, indent=2)
+
         await browser.close()
 
 
