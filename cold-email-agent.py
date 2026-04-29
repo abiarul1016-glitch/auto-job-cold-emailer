@@ -222,9 +222,6 @@ async def send_cold_email(send_to, company_name, generated_reason):
     if await check_if_already_sent(send_to):
         return "Email has already been sent to this address before. Do not reattempt, as to avoid spamming them."
 
-    # For now reassign send_to, to my email for testing purposes. TODO: REMOVE IN PRODUCTION
-    send_to = USER_EMAIL
-
     # Set up Email Details - TODO: Add profile image
     message = EmailMessage()
     message["From"] = USER_EMAIL
