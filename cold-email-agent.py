@@ -347,9 +347,10 @@ async def main():
     try:
         await agent.run()
     finally:
-        
+        sorted_list = dict(sorted(EMAIL_LIST.items(), key=lambda item: item[1]))
+
         with open("sent_emails.json", "w") as file:
-            json.dump(EMAIL_LIST, file, indent=2)
+            json.dump(sorted_list, file, indent=2)
 
         await browser.close()
 
