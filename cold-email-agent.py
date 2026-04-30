@@ -330,23 +330,15 @@ abiarul1016@gmail.com
 
 
 async def check_if_already_sent(email):
-    return email in EMAIL_LIST.values()
+    return email in EMAIL_LIST
 
 
 async def add_email_to_list(company_name: str, email: str):
-    EMAIL_LIST[company_name] = email
+    EMAIL_LIST[email] = company_name
 
 
 async def main():
     print("\nThis is a slim browser agent!")
-
-    # # Open tracker for which emails have been sent to
-    # try:
-    #     async with aiofiles.open("sent_emails.json", "r") as file:
-    #         EMAIL_LIST = json.load(file)
-    # except FileNotFoundError:
-    #     print('Email Addresses JSON does not exist yet.')
-    #     EMAIL_LIST = {}
 
     browser = await BrowserManager.create(state_path=BROWSER_STATE_PATH)
     # Change click to True to activate clicking functionality
@@ -355,6 +347,7 @@ async def main():
     try:
         await agent.run()
     finally:
+        
         with open("sent_emails.json", "w") as file:
             json.dump(EMAIL_LIST, file, indent=2)
 
