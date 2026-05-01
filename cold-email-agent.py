@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 from email.message import EmailMessage
+from typing import Literal
 
 import aiosmtplib
 from dotenv import load_dotenv
@@ -44,6 +45,11 @@ try:
 except FileNotFoundError:
     print("Email Addresses JSON does not exist yet.")
     EMAIL_LIST = {}
+
+# MASTER PROMPT
+# The user prompt is crucial for this application as the model's thinking ability has been turned off to improve performance, so the user prompt will need to be specific to make it efficient
+# SAMPLE:
+# Hey I'm a highschooler in Grade 12, soon graduating. I am looking to apply for some developer jobs. Look through the jobs listed here, that pay relatively well and will fit me. You will need to look into the listing, and click “Show how to apply” to get more details on the company and their email. Apply to 5 jobs for me: https://www.jobbank.gc.ca/jobsearch/jobsearch?searchstring=&locationstring=L6P3K7&locationparam=L6P3K7&fsrc=21
 
 
 class BrowserManager:
@@ -140,7 +146,7 @@ class WebAgent:
         self.messages = [
             {
                 "role": "system",
-                "content": "You are a job application assistant. You have access to functions which allows you to access the browser, navigate pages, as well as send emails. Also, you are in an agent loop, so you are free to use whatever function you wish, and as many you like. Try to pass arguments into the url (when applicable), rather than clicking, to preserve resources and increase efficiencies by decreasing overhead.",
+                "content": "You are a job application assistant. You have access to functions which allows you to access the browser, navigate pages, as well as send emails. Make sure the email you use is real and exists, and not something you guess. Also, you are in an agent loop, so you are free to use whatever function you wish, and as many you like. Try to pass arguments into the url (when applicable), rather than clicking, to preserve resources and increase efficiencies by decreasing overhead.",
             },
         ]
         self.client = AsyncClient()
@@ -205,7 +211,13 @@ class WebAgent:
 
 
 # this can be factored into two functions: generate email, and send email
-async def send_cold_email(send_to, company_name, generated_reason):
+async def send_cold_email(
+    send_to,
+    company_name,
+    generated_reason,
+    email_type: Literal["cold_email", "internship", "summer_job"],
+    generated_email="",
+):
     """
     Send a personalized cold email to a company.
 
@@ -213,55 +225,33 @@ async def send_cold_email(send_to, company_name, generated_reason):
             send_to: Recipient email address (str).
             company_name: Name of the company (str). Used to personalize subject and body.
             generated_reason: Two sweet sentences long, personalized reason for applying which must be relevant to the company (str). Injected into email body.
+            email_type: Type of email template to use (str). Possible options are: "cold_email", "internship", "summer_job".
 
         Returns:
-            str: Success, error message, or a message that an email has already been sent to that address.
+            str: Success, error message, or a message that an email has already been sent to that address or entered email_type is invalid.
     """
+    # """
+    # Send a personalized cold email to a company.
+
+    #     Args:
+    #         send_to: Recipient email address (str).
+    #         company_name: Name of the company (str). Used to personalize subject and body.
+    #         generated_reason: Two sweet sentences long, personalized reason for applying which must be relevant to the company (str). Injected into email body.
+    #         email_type: Type of email template to use (str). e.g., "cold_email", "internship", "summer_job", "ai_generated".
+    #         generated_email: Pre-written email content (str). Required when email_type is "ai_generated".
+
+    #     Returns:
+    #         str: Success, error message, or a message that an email has already been sent to that address, entered email_type is invalid, or generated_email must not be empty if using ai_generated email_type option.
+    # """
 
     # Check if email has already been sent to company, to prevent spamming from program-side
     if await check_if_already_sent(send_to):
         return "Email has already been sent to this address before. Do not reattempt, as to avoid spamming them."
 
-    # Set up Email Details - TODO: Add profile image
-    message = EmailMessage()
-    message["From"] = USER_EMAIL
-    message["To"] = send_to
-    message["Subject"] = (
-        f"12th grader / Python & Automation dev looking to build for {company_name}"
-    )
-    message.set_content(
-        f"""To the team at {company_name},
-
-Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I'd rather build real tools than read about them.
-
-I'm a self-taught developer (CS50x/P) focused on automation and local AI. Recently, I built a slim browser agent using Playwright because traditional MCP servers were too slow for my local machine. You can see the repo here: https://github.com/abiarul1016-glitch/slim-browser-agent
-
-I also have experience with:
-Local AI: Working with Ollama for task automation.
-Voice/Data: Building end-to-end automation pipelines (scraping, data analysis).
-
-Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: https://github.com/abiarul1016-glitch/Skipper
-
-I'm looking to skip the traditional 4-year degree to put that energy into an organization building real products. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.
-
-{generated_reason}
-
-Do you have 10 minutes for a quick chat, or perhaps a small task/internship where I could prove my value?
-
-Best of luck with any future endeavours,
-Abishan Arulselvan
-
-GitHub: https://github.com/abiarul1016-glitch
-Linkedin: https://www.linkedin.com/in/abishan-arulselvan/
-
-Abishan Arulselvan | STUDENT
-abiarul1016@gmail.com
-
-"""
-    )
-
-    # HTML version, for better formatting
-    html_content = f"""
+    match email_type:
+        case "cold_email":
+            subject_content = f"12th grader / Python & Automation dev looking to build for {company_name}"
+            message_content = f"""
     <html>
         <body style="font-family: 'Georgia', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
             <p>To the team at <strong>{company_name}</strong>,</p>
@@ -272,10 +262,9 @@ abiarul1016@gmail.com
             
             <p>I also have experience with:</p>
             <ul>
-                <li><strong>Local AI:</strong> Working with Ollama for task automation.</li>
-                <li><strong>Voice/Data:</strong> Building end-to-end automation pipelines.</li>
-                <li><strong>Web Scraping:</strong> Created a Hackathon Scraper so I don't miss out on free food! <a href="https://github.com/abiarul1016-glitch/hackathon_scraper">GitHub</a></li>
-                <li><strong>rental suite:</strong> An automated listing poster, using Playwright, Python asyncio, and text-generation via Ollama <a href="https://github.com/abiarul1016-glitch/rental-suite">GitHub</a></li>
+                <li><strong>Local AI:</strong> Integrating Ollama (Qwen) for on-device reasoning and automated content generation.</li>
+                <li><strong>Web Scraping:</strong> Created a Hackathon Scraper to aggregate and deduplicate real-world data—so I don't miss out on free food! <a href="https://github.com/abiarul1016-glitch/hackathon_scraper">GitHub</a></li>
+                <li><strong>Automation Pipelines:</strong> Building concurrent systems using Python <strong>asyncio</strong> and <strong>Playwright</strong>, such as my <a href="https://github.com/abiarul1016-glitch/rental-suite">rental suite</a> which automates multi-platform real estate listings.</li>
             </ul>
             
             <p>Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: <a href="https://github.com/abiarul1016-glitch/Skipper">https://github.com/abiarul1016-glitch/Skipper</a></p>
@@ -310,6 +299,152 @@ abiarul1016@gmail.com
         </body>
     </html>
     """
+        case "internship":
+            subject_content = f"12th grader / Python & Automation dev looking to intern for {company_name}"
+            message_content = f"""
+    <html>
+        <body style="font-family: 'Georgia', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+            <p>To the team at <strong>{company_name}</strong>,</p>
+            
+            <p>Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I'd rather build real tools than read about them.</p>
+
+            <p>I'm a self-taught developer (CS50x/P) focused on automation and local AI, and I'm looking to contribute to {company_name} as an intern. Recently, I built a slim browser agent using Playwright because traditional MCP servers were too slow for my local machine. You can see the repo here: <a href="https://github.com/abiarul1016-glitch/slim-browser-agent">https://github.com/abiarul1016-glitch/slim-browser-agent</a></p>
+            
+            <p>I also have experience with:</p>
+            <ul>
+                <li><strong>Local AI:</strong> Integrating Ollama (Qwen) for on-device reasoning and automated content generation.</li>
+                <li><strong>Web Scraping:</strong> Created a Hackathon Scraper to aggregate and deduplicate real-world data—so I don't miss out on free food! <a href="https://github.com/abiarul1016-glitch/hackathon_scraper">GitHub</a></li>
+                <li><strong>Automation Pipelines:</strong> Building concurrent systems using Python <strong>asyncio</strong> and <strong>Playwright</strong>, such as my <a href="https://github.com/abiarul1016-glitch/rental-suite">rental suite</a> which automates multi-platform real estate listings.</li>
+            </ul>
+            
+            <p>Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: <a href="https://github.com/abiarul1016-glitch/Skipper">https://github.com/abiarul1016-glitch/Skipper</a></p>
+
+            <p>I'm looking to skip the traditional 4-year degree to put that energy into an internship where I can be put to work on real tickets. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.</p>
+
+            <p>{generated_reason}</p>
+
+            <p>Would you be open to a 10-minute technical chat? I'd love to show you what I've built and discuss how I can help the team this summer.</p>
+
+            <!-- EMAIL SIGNATURE -->
+            <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr>
+                        <!-- Image Column -->
+                        <td style="vertical-align: top; padding-right: 15px;">
+                            <img src="{IMAGE_URL}" width="65" height="65" style="display: block; border: 0;">
+                        </td>
+                        
+                        <!-- Text Column -->
+                        <td style="vertical-align: top; line-height: 1.4;">
+                            <strong style="color: #007bff; font-size: 16px;">Abishan Arulselvan</strong><br>
+                            <span style="font-size: 12px; color: #666;">Python & Automation Developer | Student</span><br>
+                            <span style="font-size: 12px;">
+                                <a href="https://github.com/abiarul1016-glitch" style="text-decoration: none; color: #007bff;">GitHub</a> | 
+                                <a href="https://www.linkedin.com/in/abishan-arulselvan/" style="text-decoration: none; color: #007bff;">LinkedIn</a>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </body>
+    </html>
+    """
+        case "summer_job":
+            subject_content = f"12th grader / Python & Automation dev looking to build for {company_name} this Summer"
+            message_content = f"""
+    <html>
+        <body style="font-family: 'Georgia', sans-serif; font-size: 14px; line-height: 1.5; color: #333;">
+            <p>To the team at <strong>{company_name}</strong>,</p>
+            
+            <p>Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I'd rather build real tools than read about them.</p>
+
+            <p>I'm a self-taught developer (CS50x/P) focused on automation and local AI. I am looking for a summer role where I can apply my grit and technical stack to real challenges. Recently, I built a slim browser agent using Playwright because traditional MCP servers were too slow for my local machine. You can see the repo here: <a href="https://github.com/abiarul1016-glitch/slim-browser-agent">https://github.com/abiarul1016-glitch/slim-browser-agent</a></p>
+
+            <p>I also have experience with:</p>
+            <ul>
+                <li><strong>Local AI:</strong> Integrating Ollama (Qwen) for on-device reasoning and automated content generation.</li>
+                <li><strong>Web Scraping:</strong> Created a Hackathon Scraper to aggregate and deduplicate real-world data—so I don't miss out on free food! <a href="https://github.com/abiarul1016-glitch/hackathon_scraper">GitHub</a></li>
+                <li><strong>Automation Pipelines:</strong> Building concurrent systems using Python <strong>asyncio</strong> and <strong>Playwright</strong>, such as my <a href="https://github.com/abiarul1016-glitch/rental-suite">rental suite</a> which automates multi-platform real estate listings.</li>
+            </ul>
+            
+            <p>Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: <a href="https://github.com/abiarul1016-glitch/Skipper">https://github.com/abiarul1016-glitch/Skipper</a></p>
+
+            <p>I'm looking to put my energy into an organization building real products this summer. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.</p>
+
+            <p>{generated_reason}</p>
+
+            <p>Do you have 10 minutes for a quick chat, or a small technical task where I could prove my value this summer?</p>
+
+            <!-- EMAIL SIGNATURE -->
+            <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 10px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                    <tr>
+                        <!-- Image Column -->
+                        <td style="vertical-align: top; padding-right: 15px;">
+                            <img src="{IMAGE_URL}" width="65" height="65" style="display: block; border: 0;">
+                        </td>
+                        
+                        <!-- Text Column -->
+                        <td style="vertical-align: top; line-height: 1.4;">
+                            <strong style="color: #007bff; font-size: 16px;">Abishan Arulselvan</strong><br>
+                            <span style="font-size: 12px; color: #666;">Python & Automation Developer | Student</span><br>
+                            <span style="font-size: 12px;">
+                                <a href="https://github.com/abiarul1016-glitch" style="text-decoration: none; color: #007bff;">GitHub</a> | 
+                                <a href="https://www.linkedin.com/in/abishan-arulselvan/" style="text-decoration: none; color: #007bff;">LinkedIn</a>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </body>
+    </html>
+    """
+        case "ai_generated":
+            if generated_email:
+                message_content = generated_email
+            else:
+                return "If using ai_generated email type, a generated email must be passed in."
+        case _:
+            return "Invalid email type, make sure to pass an accepted email type for the template to work."
+
+    # Set up Email Details - TODO: Add profile image
+    message = EmailMessage()
+    message["From"] = USER_EMAIL
+    message["To"] = send_to
+    message["Subject"] = subject_content
+    message.set_content(
+        f"""To the team at {company_name},
+
+Have you ever felt like a bird whose feet were chained, and force-fed baby food? That's how I have constantly felt at school, where the theoretical path isn't for me. I'd rather build real tools than read about them.
+
+I'm a self-taught developer (CS50x/P) focused on automation and local AI. Recently, I built a slim browser agent using Playwright because traditional MCP servers were too slow for my local machine. You can see the repo here: https://github.com/abiarul1016-glitch/slim-browser-agent
+
+I also have experience with:
+Local AI: Working with Ollama for task automation.
+Voice/Data: Building end-to-end automation pipelines (scraping, data analysis).
+
+Personally, my most interesting automation is Skipper: an automated absence caller, which calls my school office in my parents' cloned voice—so I can skip school. You can check it out here: https://github.com/abiarul1016-glitch/Skipper
+
+I'm looking to skip the traditional 4-year degree to put that energy into an organization building real products. I know hiring a high schooler is a non-traditional move, but I have the grit to learn whatever stack you use and the drive to deliver results immediately.
+
+{generated_reason}
+
+Do you have 10 minutes for a quick chat, or perhaps a small task/internship where I could prove my value?
+
+Best of luck with any future endeavours,
+Abishan Arulselvan
+
+GitHub: https://github.com/abiarul1016-glitch
+Linkedin: https://www.linkedin.com/in/abishan-arulselvan/
+
+Abishan Arulselvan | STUDENT
+abiarul1016@gmail.com
+
+"""
+    )
+
+    # HTML version, for better formatting
+    html_content = message_content
     message.add_alternative(html_content, subtype="html")
 
     try:
