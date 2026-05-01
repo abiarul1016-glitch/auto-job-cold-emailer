@@ -1,4 +1,4 @@
-# auto-job-cold-emailer
+# sent.
 
 **THE method for spray and pray.**
 
@@ -14,11 +14,13 @@
 
 ---
 
+[![Trailer](https://img.youtube.com/vi/tHjQdi3sXKY/maxresdefault.jpg)](https://youtu.be/tHjQdi3sXKY)
+
 ## What is it?
 
 Job hunting means cold emailing dozens — sometimes hundreds — of companies. The process is repetitive, tedious, and time-consuming: research each company, write a personalized pitch, craft a subject line, and hit send. Rinse and repeat.
 
-**auto-job-cold-emailer** automates all of that.
+**sent.** automates all of that.
 
 Define your target companies, and the agent handles the rest: navigating to their websites, extracting relevant information, generating personalized email content via a local LLM, and sending tailored outreach emails through your Gmail account — all in a single interactive session.
 
@@ -29,12 +31,13 @@ Define your target companies, and the agent handles the rest: navigating to thei
 - **Browser Automation** — Built-in Playwright-based browser agent to scrape company information from websites and extract relevant details
 - **Duplicate Prevention** — Tracks sent emails in `sent_emails.json` to avoid spamming the same company across multiple outreach runs
 - **Dual Email Templates** — Both plain text and HTML email versions with professional formatting and a branded signature block
+- **Multiple Email Templates** — Choose from three pre-built templates: `cold_email` (general outreach), `internship` (internship-specific), and `summer_job` (summer role-specific), each with tailored subject lines and body copy
 - **Configurable Model Selection** — Switch between different Ollama models (e.g., `qwen3.5:0.8b` for speed, `qwen3.6:35b-a3b-coding-nvfp4` for quality)
 - **Click Actions** — Optional browser clicking functionality to interact with buttons and elements on web pages
 
 ## How it works
 
-**auto-job-cold-emailer** operates as an interactive, multi-stage pipeline, moving from data extraction to live email delivery with minimal human intervention.
+**sent.** operates as an interactive, multi-stage pipeline, moving from data extraction to live email delivery with minimal human intervention.
 
 1. **Agent Initialization** — The system launches an interactive CLI loop powered by a local LLM (Qwen via Ollama). The agent is equipped with browser tools and an email-sending tool.
 2. **User Input** — You type commands into the CLI. The agent parses your request and decides which tools to use.
@@ -63,7 +66,7 @@ WebAgent (ollama LLM)
 
 ## Tech stack
 
-**auto-job-cold-emailer** is a local-first, Python-driven automation tool.
+**sent.** is a local-first, Python-driven automation tool.
 
 | Layer                  | Technology    | Purpose                                            |
 | :--------------------- | :------------ | :------------------------------------------------- |
@@ -173,7 +176,6 @@ Emails already sent are stored in `sent_emails.json`. The agent checks this befo
 
 ## What's next
 
-- [ ] Add support for multiple email templates (e.g., internship, full-time, freelance)
 - [ ] Integrate with job boards (LinkedIn, Indeed) to auto-discover target companies
 - [ ] Add email reply tracking and response categorization
 - [ ] Support for additional SMTP providers (Outlook, Yahoo, custom domains)

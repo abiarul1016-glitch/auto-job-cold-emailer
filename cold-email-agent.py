@@ -230,19 +230,6 @@ async def send_cold_email(
         Returns:
             str: Success, error message, or a message that an email has already been sent to that address or entered email_type is invalid.
     """
-    # """
-    # Send a personalized cold email to a company.
-
-    #     Args:
-    #         send_to: Recipient email address (str).
-    #         company_name: Name of the company (str). Used to personalize subject and body.
-    #         generated_reason: Two sweet sentences long, personalized reason for applying which must be relevant to the company (str). Injected into email body.
-    #         email_type: Type of email template to use (str). e.g., "cold_email", "internship", "summer_job", "ai_generated".
-    #         generated_email: Pre-written email content (str). Required when email_type is "ai_generated".
-
-    #     Returns:
-    #         str: Success, error message, or a message that an email has already been sent to that address, entered email_type is invalid, or generated_email must not be empty if using ai_generated email_type option.
-    # """
 
     # Check if email has already been sent to company, to prevent spamming from program-side
     if await check_if_already_sent(send_to):
@@ -399,15 +386,14 @@ async def send_cold_email(
         </body>
     </html>
     """
-        case "ai_generated":
-            if generated_email:
-                message_content = generated_email
-            else:
-                return "If using ai_generated email type, a generated email must be passed in."
+        # case "ai_generated":
+        #     if generated_email:
+        #         message_content = generated_email
+        #     else:
+        #         return "If using ai_generated email type, a generated email must be passed in."
         case _:
             return "Invalid email type, make sure to pass an accepted email type for the template to work."
 
-    # Set up Email Details - TODO: Add profile image
     message = EmailMessage()
     message["From"] = USER_EMAIL
     message["To"] = send_to
